@@ -1,3 +1,8 @@
+bash
+
+cat /home/claude/WoodPrintCam/app/src/main/java/com/example/woodprintcam/MainActivity.kt
+출력
+
 package com.example.woodprintcam
 
 import android.Manifest
@@ -35,11 +40,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
-    private var lastCapturedBitmap: Bitmap? = null
-    private var originalBitmap: Bitmap? = null
+    private var lastCapturedBitmap: Bitmap? = null   // 프레임+필터까지 적용된, 실제 인쇄될 이미지
+    private var originalBitmap: Bitmap? = null        // 필터 적용된 상태(프레임 적용 전) 이미지
+    private var rawCapturedBitmap: Bitmap? = null      // 필터 적용 전 순수 원본 (회전 보정만 된 상태)
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     private var selectedFrame = FrameType.NONE
+    private var selectedFilterLevel = 2 // 1: 약하게, 2: 보통(기본), 3: 화사하게
 
+    // 카메라 권한 요청 런처.
+    // 사용자가 한 번 "허용"을 누르면 안드로이드 시스템이 앱 재실행 시에도 계속 허용 상태를
+    // 자동으로 유지해줍니다. 따라서 매번 요청할 필요 없이, 시작할 때 이미 허용됐는지만
+    // 확인(hasCameraPermission)하고, 허용 안 됐을 때만 이 런처를 호출합니다.
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
@@ -61,6 +72,8 @@ class MainActivity : AppCompatActivity() {
             showCameraUi()
             startCamera()
         } else {
+            // 최초 1회만 요청. 이후에는 hasCameraPermission()이 true를 반환하므로
+            // 이 분기를 다시 타지 않습니다.
             requestPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
 
@@ -79,6 +92,10 @@ class MainActivity : AppCompatActivity() {
         binding.frameSnowBtn.setOnClickListener { selectFrame(FrameType.SNOW) }
         binding.frameGoldBtn.setOnClickListener { selectFrame(FrameType.GOLD) }
         binding.frameBubbleBtn.setOnClickListener { selectFrame(FrameType.BUBBLE) }
+
+        binding.filterLevel1Btn.setOnClickListener { selectFilterLevel(1) }
+        binding.filterLevel2Btn.setOnClickListener { selectFilterLevel(2) }
+        binding.filterLevel3Btn.setOnClickListener { selectFilterLevel(3) }
     }
 
     private fun hasCameraPermission(): Boolean =
@@ -122,6 +139,7 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
+    // 전면 <-> 후면 카메라 전환
     private fun switchCamera() {
         lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
             CameraSelector.LENS_FACING_FRONT
@@ -131,6 +149,7 @@ class MainActivity : AppCompatActivity() {
         startCamera()
     }
 
+    // 셔터 버튼을 누르면 화면에 3, 2, 1 숫자가 보이다가 자동으로 촬영됩니다.
     private val countdownHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
     private fun startCountdownAndCapture() {
@@ -163,9 +182,12 @@ class MainActivity : AppCompatActivity() {
             cameraExecutor,
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
-                    val bitmap = applyBrightFilter(imageProxyToBitmap(image))
+                    val bitmap = imageProxyToBitmap(image)
                     image.close()
-                    runOnUiThread { showCapturedPhoto(bitmap) }
+                    runOnUiThread {
+                        rawCapturedBitmap = bitmap
+                        showCapturedPhoto()
+                    }
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -181,6 +203,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    // ImageProxy(YUV/JPEG) -> Bitmap 변환 + 회전 보정 + 전면 카메라 좌우 반전 보정
     private fun imageProxyToBitmap(image: ImageProxy): Bitmap {
         val buffer = image.planes[0].buffer
         val bytes = ByteArray(buffer.remaining())
@@ -192,6 +215,8 @@ class MainActivity : AppCompatActivity() {
         if (rotationDegrees != 0) {
             matrix.postRotate(rotationDegrees.toFloat())
         }
+        // 전면 카메라는 화면에 거울처럼 보이므로, 저장되는 사진도
+        // 화면에서 본 것과 같게 좌우를 뒤집어줍니다.
         if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
             matrix.postScale(-1f, 1f)
         }
@@ -203,14 +228,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyBrightFilter(source: Bitmap): Bitmap {
+    // 밝고 화사한 느낌의 필터 (밝기 업 + 채도 업 + 살짝 선명하게)
+    // level 1: 약하게 (밝은 곳에서 촬영할 때 추천), 2: 보통, 3: 화사하게
+    private fun applyBrightFilter(source: Bitmap, level: Int): Bitmap {
         val result = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        val brightness = 30f
-        val contrast = 1.15f
-        val saturation = 1.6f
+        val brightness: Float
+        val contrast: Float
+        val saturation: Float
+        when (level) {
+            1 -> { brightness = 8f;  contrast = 1.03f; saturation = 1.15f }
+            3 -> { brightness = 30f; contrast = 1.15f; saturation = 1.6f }
+            else -> { brightness = 18f; contrast = 1.08f; saturation = 1.35f }
+        }
 
         val saturationMatrix = ColorMatrix().apply { setSaturation(saturation) }
         val brightnessContrastMatrix = ColorMatrix(
@@ -232,28 +264,66 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
-    private fun showCapturedPhoto(bitmap: Bitmap) {
-        originalBitmap = bitmap
+    private fun showCapturedPhoto() {
         selectedFrame = FrameType.NONE
-        updateFramedPreview()
+        selectedFilterLevel = 2
+        applyFilterAndRefresh()
+        updateFilterButtonHighlight()
 
         binding.capturedImageView.visibility = android.view.View.VISIBLE
         binding.previewView.visibility = android.view.View.GONE
         binding.shutterButton.visibility = android.view.View.GONE
         binding.resultButtonRow.visibility = android.view.View.VISIBLE
+        binding.filterLevelRow.visibility = android.view.View.VISIBLE
         binding.frameSelectorScroll.visibility = android.view.View.VISIBLE
     }
 
     private fun returnToCameraMode() {
         lastCapturedBitmap = null
         originalBitmap = null
+        rawCapturedBitmap = null
         binding.capturedImageView.visibility = android.view.View.GONE
         binding.previewView.visibility = android.view.View.VISIBLE
         binding.shutterButton.visibility = android.view.View.VISIBLE
         binding.resultButtonRow.visibility = android.view.View.GONE
+        binding.filterLevelRow.visibility = android.view.View.GONE
         binding.frameSelectorScroll.visibility = android.view.View.GONE
     }
 
+    // 필터 강도(1/2/3) 선택 시 호출 - 원본 사진에 새 강도로 다시 필터를 입힙니다.
+    private fun selectFilterLevel(level: Int) {
+        selectedFilterLevel = level
+        applyFilterAndRefresh()
+        updateFilterButtonHighlight()
+    }
+
+    // 순수 원본(rawCapturedBitmap)에 현재 선택된 필터 강도를 적용하고,
+    // 그 위에 현재 선택된 프레임까지 다시 그려서 화면을 갱신합니다.
+    private fun applyFilterAndRefresh() {
+        val raw = rawCapturedBitmap ?: return
+        originalBitmap = applyBrightFilter(raw, selectedFilterLevel)
+        updateFramedPreview()
+    }
+
+    private fun updateFilterButtonHighlight() {
+        val selectedBg = R.drawable.bg_frame_chip_selected
+        val normalBg = R.drawable.bg_frame_chip
+        val selectedTextColor = ContextCompat.getColor(this, R.color.wood_dark)
+        val normalTextColor = ContextCompat.getColor(this, R.color.wood_cream)
+
+        val buttons = listOf(
+            1 to binding.filterLevel1Btn,
+            2 to binding.filterLevel2Btn,
+            3 to binding.filterLevel3Btn
+        )
+        for ((level, button) in buttons) {
+            val isSelected = level == selectedFilterLevel
+            button.setBackgroundResource(if (isSelected) selectedBg else normalBg)
+            button.setTextColor(if (isSelected) selectedTextColor else normalTextColor)
+        }
+    }
+
+    // 프레임 선택 시 호출 - 원본에 새로 선택한 프레임을 적용해서 미리보기 갱신
     private fun selectFrame(frame: FrameType) {
         selectedFrame = frame
         updateFramedPreview()
@@ -266,6 +336,7 @@ class MainActivity : AppCompatActivity() {
         binding.capturedImageView.setImageBitmap(framed)
     }
 
+    // 프레임 종류에 따라 알맞은 함수로 분기
     private fun applyFrame(source: Bitmap, frame: FrameType): Bitmap {
         return when (frame) {
             FrameType.NONE -> source
@@ -296,6 +367,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // 단순 테두리 + (옵션) 네 모서리 장식 문자
     private fun drawBorderFrame(
         source: Bitmap,
         borderColor: Int,
@@ -329,6 +401,7 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
+    // 필름 스트립: 위/아래 검은 띠 + 하얀 사각형 구멍 장식
     private fun drawFilmStripFrame(source: Bitmap): Bitmap {
         val barHeight = (source.height * 0.09f).toInt()
         val result = Bitmap.createBitmap(source.width, source.height + barHeight * 2, Bitmap.Config.ARGB_8888)
@@ -354,6 +427,7 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
+    // 폴라로이드: 하얀 여백 + 하단 캡션 문구
     private fun drawPolaroidFrame(source: Bitmap): Bitmap {
         val margin = (source.width * 0.05f).toInt()
         val bottomMargin = (source.height * 0.18f).toInt()
@@ -380,6 +454,7 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
+    // 무지개 그라데이션 테두리
     private fun drawRainbowFrame(source: Bitmap): Bitmap {
         val result = source.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(result)
@@ -405,6 +480,7 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
+    // 하얀 눈꽃이 흩날리는 느낌의 겨울 프레임
     private fun drawSnowFrame(source: Bitmap): Bitmap {
         val result = source.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(result)
@@ -419,7 +495,7 @@ class MainActivity : AppCompatActivity() {
         canvas.drawRect(inset, inset, result.width - inset, result.height - inset, borderPaint)
 
         val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
-        val random = java.util.Random(42)
+        val random = java.util.Random(42) // 고정 시드로 매번 같은 패턴
         repeat(40) {
             val onTopBottom = random.nextBoolean()
             val x: Float
@@ -437,6 +513,7 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
+    // 고급스러운 이중 골드 라인 테두리
     private fun drawGoldFrame(source: Bitmap): Bitmap {
         val result = source.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(result)
@@ -466,6 +543,7 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
+    // 파스텔톤 버블(동그라미)이 모서리에 흩뿌려진 귀여운 프레임
     private fun drawBubbleFrame(source: Bitmap): Bitmap {
         val result = source.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(result)
@@ -523,3 +601,4 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor.shutdown()
     }
 }
+
