@@ -40,10 +40,6 @@ class MainActivity : AppCompatActivity() {
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     private var selectedFrame = FrameType.NONE
 
-    // 카메라 권한 요청 런처.
-    // 사용자가 한 번 "허용"을 누르면 안드로이드 시스템이 앱 재실행 시에도 계속 허용 상태를
-    // 자동으로 유지해줍니다. 따라서 매번 요청할 필요 없이, 시작할 때 이미 허용됐는지만
-    // 확인(hasCameraPermission)하고, 허용 안 됐을 때만 이 런처를 호출합니다.
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
@@ -65,12 +61,10 @@ class MainActivity : AppCompatActivity() {
             showCameraUi()
             startCamera()
         } else {
-            // 최초 1회만 요청. 이후에는 hasCameraPermission()이 true를 반환하므로
-            // 이 분기를 다시 타지 않습니다.
             requestPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
 
-        binding.shutterButton.setOnClickListener { takePhoto() }
+        binding.shutterButton.setOnClickListener { startCountdownAndCapture() }
         binding.retakeButton.setOnClickListener { returnToCameraMode() }
         binding.printButton.setOnClickListener { printCapturedPhoto() }
         binding.switchCameraButton.setOnClickListener { switchCamera() }
@@ -134,6 +128,32 @@ class MainActivity : AppCompatActivity() {
         startCamera()
     }
 
+    // 셔터 버튼을 누르면 화면에 3, 2, 1 숫자가 보이다가 자동으로 촬영됩니다.
+    private val countdownHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
+    private fun startCountdownAndCapture() {
+        binding.shutterButton.isEnabled = false
+        binding.countdownText.visibility = android.view.View.VISIBLE
+
+        var secondsLeft = 3
+        binding.countdownText.text = secondsLeft.toString()
+
+        val tick = object : Runnable {
+            override fun run() {
+                secondsLeft -= 1
+                if (secondsLeft > 0) {
+                    binding.countdownText.text = secondsLeft.toString()
+                    countdownHandler.postDelayed(this, 1000)
+                } else {
+                    binding.countdownText.visibility = android.view.View.GONE
+                    binding.shutterButton.isEnabled = true
+                    takePhoto()
+                }
+            }
+        }
+        countdownHandler.postDelayed(tick, 1000)
+    }
+
     private fun takePhoto() {
         val capture = imageCapture ?: return
 
@@ -159,7 +179,6 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    // ImageProxy(YUV/JPEG) -> Bitmap 변환 + 회전 보정 + 전면 카메라 좌우 반전 보정
     private fun imageProxyToBitmap(image: ImageProxy): Bitmap {
         val buffer = image.planes[0].buffer
         val bytes = ByteArray(buffer.remaining())
@@ -171,8 +190,6 @@ class MainActivity : AppCompatActivity() {
         if (rotationDegrees != 0) {
             matrix.postRotate(rotationDegrees.toFloat())
         }
-        // 전면 카메라는 화면에 거울처럼 보이므로, 저장되는 사진도
-        // 화면에서 본 것과 같게 좌우를 뒤집어줍니다.
         if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
             matrix.postScale(-1f, 1f)
         }
@@ -184,15 +201,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 밝고 화사한 느낌의 필터 (밝기 업 + 채도 업 + 살짝 선명하게)
     private fun applyBrightFilter(source: Bitmap): Bitmap {
         val result = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        val brightness = 18f   // 밝기 (0~255 범위에서 더할 값)
-        val contrast = 1.08f   // 대비 (1.0이 원본)
-        val saturation = 1.35f // 채도 (1.0이 원본, 높을수록 화사함)
+        val brightness = 18f
+        val contrast = 1.08f
+        val saturation = 1.35f
 
         val saturationMatrix = ColorMatrix().apply { setSaturation(saturation) }
         val brightnessContrastMatrix = ColorMatrix(
@@ -236,7 +252,6 @@ class MainActivity : AppCompatActivity() {
         binding.frameSelectorScroll.visibility = android.view.View.GONE
     }
 
-    // 프레임 선택 시 호출 - 원본에 새로 선택한 프레임을 적용해서 미리보기 갱신
     private fun selectFrame(frame: FrameType) {
         selectedFrame = frame
         updateFramedPreview()
@@ -249,7 +264,6 @@ class MainActivity : AppCompatActivity() {
         binding.capturedImageView.setImageBitmap(framed)
     }
 
-    // 프레임 종류에 따라 알맞은 함수로 분기
     private fun applyFrame(source: Bitmap, frame: FrameType): Bitmap {
         return when (frame) {
             FrameType.NONE -> source
@@ -276,7 +290,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 단순 테두리 + (옵션) 네 모서리 장식 문자
     private fun drawBorderFrame(
         source: Bitmap,
         borderColor: Int,
@@ -310,7 +323,6 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
-    // 필름 스트립: 위/아래 검은 띠 + 하얀 사각형 구멍 장식
     private fun drawFilmStripFrame(source: Bitmap): Bitmap {
         val barHeight = (source.height * 0.09f).toInt()
         val result = Bitmap.createBitmap(source.width, source.height + barHeight * 2, Bitmap.Config.ARGB_8888)
@@ -336,7 +348,6 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
-    // 폴라로이드: 하얀 여백 + 하단 캡션 문구
     private fun drawPolaroidFrame(source: Bitmap): Bitmap {
         val margin = (source.width * 0.05f).toInt()
         val bottomMargin = (source.height * 0.18f).toInt()
@@ -355,7 +366,7 @@ class MainActivity : AppCompatActivity() {
             textAlign = Paint.Align.CENTER
         }
         canvas.drawText(
-            "♥ Family ♥",
+            "♥ LOVE ♥",
             result.width / 2f,
             source.height + margin + bottomMargin * 0.6f,
             textPaint
@@ -366,28 +377,24 @@ class MainActivity : AppCompatActivity() {
     // 캐논 SELPHY 프린터는 표준 인쇄가 아니라 "SELPHY Photo Layout" 전용 앱을 통해서만
     // 인쇄되는 기종이 많습니다. 그래서 촬영한 사진을 그 앱으로 직접 전달(공유)해서
     // 앱이 자동으로 열리며 사진이 이미 불러와진 상태로 시작되게 합니다.
-    // (프린터와의 실제 무선 연결/페어링은 SELPHY Photo Layout 앱이 담당합니다.)
     private val selphyPackageName = "jp.co.canon.ic.photolayout"
 
     private fun printCapturedPhoto() {
         val bitmap = lastCapturedBitmap ?: return
 
         try {
-            // 1. 사진을 앱 내부 캐시 폴더에 파일로 저장
             val cacheDir = java.io.File(cacheDir, "captured_images").apply { mkdirs() }
             val imageFile = java.io.File(cacheDir, "photo_${System.currentTimeMillis()}.jpg")
             java.io.FileOutputStream(imageFile).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
             }
 
-            // 2. 다른 앱이 접근할 수 있는 안전한 콘텐츠 URI로 변환
             val photoUri = androidx.core.content.FileProvider.getUriForFile(
                 this,
                 "$packageName.fileprovider",
                 imageFile
             )
 
-            // 3. SELPHY Photo Layout 앱으로 사진 전달
             val sendIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                 type = "image/jpeg"
                 putExtra(android.content.Intent.EXTRA_STREAM, photoUri)
