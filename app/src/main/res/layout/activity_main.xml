@@ -51,9 +51,73 @@
         android:background="@color/wood_dark"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/titleBar"
-        app:layout_constraintBottom_toTopOf="@id/frameSelectorScroll"
+        app:layout_constraintBottom_toTopOf="@id/filterLevelRow"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 필터 강도 1/2/3 선택 (촬영 후에만 표시, 프레임 선택 바로 위) -->
+    <LinearLayout
+        android:id="@+id/filterLevelRow"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:background="@color/wood_dark"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/frameSelectorScroll"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:text="화사함"
+            android:textColor="@color/wood_tan"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/filterLevel1Btn"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_frame_chip"
+            android:text="1"
+            android:textColor="@color/wood_cream"
+            android:textAllCaps="false"
+            android:textSize="13sp"
+            android:paddingHorizontal="18dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp" />
+
+        <Button
+            android:id="@+id/filterLevel2Btn"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_frame_chip_selected"
+            android:text="2"
+            android:textColor="@color/wood_dark"
+            android:textAllCaps="false"
+            android:textSize="13sp"
+            android:paddingHorizontal="18dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp" />
+
+        <Button
+            android:id="@+id/filterLevel3Btn"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:background="@drawable/bg_frame_chip"
+            android:text="3"
+            android:textColor="@color/wood_cream"
+            android:textAllCaps="false"
+            android:textSize="13sp"
+            android:paddingHorizontal="18dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp" />
+
+    </LinearLayout>
 
     <HorizontalScrollView
         android:id="@+id/frameSelectorScroll"
