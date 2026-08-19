@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wood_dark">
+
+    <!-- 상단 우드톤 바 -->
+    <TextView
+        android:id="@+id/titleBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_wood_gradient"
+        android:paddingVertical="18dp"
+        android:paddingHorizontal="20dp"
+        android:text="@string/app_name"
+        android:textColor="@color/wood_cream"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 카메라 프리뷰 -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/titleBar"
+        app:layout_constraintBottom_toTopOf="@id/controlBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 카메라 전환(전면/후면) 버튼 -->
+    <ImageButton
+        android:id="@+id/switchCameraButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_switch_camera_button"
+        android:src="@android:drawable/ic_menu_rotate"
+        android:contentDescription="카메라 전환"
+        android:scaleType="centerInside"
+        android:padding="10dp"
+        app:tint="@color/wood_cream"
+        app:layout_constraintTop_toTopOf="@id/previewView"
+        app:layout_constraintEnd_toEndOf="@id/previewView" />
+
+    <!-- 촬영된 사진 미리보기 (촬영 후 표시) -->
+    <ImageView
+        android:id="@+id/capturedImageView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="fitCenter"
+        android:background="@color/wood_dark"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/titleBar"
+        app:layout_constraintBottom_toTopOf="@id/frameSelectorScroll"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 프레임 선택 가로 스크롤 (촬영 후에만 표시) -->
+    <HorizontalScrollView
+        android:id="@+id/frameSelectorScroll"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:background="@color/wood_dark"
+        android:scrollbars="none"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/controlBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="12dp">
+
+            <Button
+                android:id="@+id/frameNoneBtn"
+                style="@style/FrameChipButton"
+                android:text="없음" />
+
+            <Button
+                android:id="@+id/frameWoodBtn"
+                style="@style/FrameChipButton"
+                android:text="우드 테두리" />
+
+            <Button
+                android:id="@+id/framePolaroidBtn"
+                style="@style/FrameChipButton"
+                android:text="폴라로이드" />
+
+            <Button
+                android:id="@+id/frameHeartBtn"
+                style="@style/FrameChipButton"
+                android:text="하트" />
+
+            <Button
+                android:id="@+id/frameFilmBtn"
+                style="@style/FrameChipButton"
+                android:text="필름 스트립" />
+
+            <Button
+                android:id="@+id/frameStarBtn"
+                style="@style/FrameChipButton"
+                android:text="별빛" />
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- 카운트다운 숫자 표시 (3초 타이머용) -->
+    <TextView
+        android:id="@+id/countdownText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/wood_gold"
+        android:textSize="90sp"
+        android:textStyle="bold"
+        android:shadowColor="@color/wood_dark"
+        android:shadowRadius="12"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/previewView"
+        app:layout_constraintBottom_toBottomOf="@id/previewView"
+        app:layout_constraintStart_toStartOf="@id/previewView"
+        app:layout_constraintEnd_toEndOf="@id/previewView" />
+
+    <!-- 권한 안내 텍스트 -->
+    <TextView
+        android:id="@+id/permissionText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/permission_denied_msg"
+        android:textColor="@color/wood_cream"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:padding="24dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/titleBar"
+        app:layout_constraintBottom_toTopOf="@id/controlBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 하단 컨트롤 바 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/controlBar"
+        android:layout_width="0dp"
+        android:layout_height="140dp"
+        android:background="@drawable/bg_wood_gradient"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 촬영 모드: 바로찍기 / 3초 타이머 버튼 -->
+        <LinearLayout
+            android:id="@+id/captureButtonRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <Button
+                android:id="@+id/instantCaptureButton"
+                android:layout_width="wrap_content"
+                android:layout_height="56dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/bg_gold_button"
+                android:text="@string/instant_capture_btn"
+                android:textColor="@color/wood_dark"
+                android:textStyle="bold"
+                android:textAllCaps="false"
+                android:paddingHorizontal="26dp" />
+
+            <Button
+                android:id="@+id/timerCaptureButton"
+                android:layout_width="wrap_content"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_outline_button"
+                android:text="@string/timer_capture_btn"
+                android:textColor="@color/wood_cream"
+                android:textAllCaps="false"
+                android:paddingHorizontal="26dp" />
+
+        </LinearLayout>
+
+        <!-- 결과 확인 모드: 다시찍기 / 인쇄 버튼 -->
+        <LinearLayout
+            android:id="@+id/resultButtonRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <Button
+                android:id="@+id/retakeButton"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/bg_outline_button"
+                android:text="@string/retake_btn"
+                android:textColor="@color/wood_cream"
+                android:textAllCaps="false"
+                android:paddingHorizontal="24dp" />
+
+            <Button
+                android:id="@+id/printButton"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_gold_button"
+                android:text="@string/print_btn"
+                android:textColor="@color/wood_white"
+                android:textStyle="bold"
+                android:textAllCaps="false"
+                android:paddingHorizontal="24dp" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- 만든 사람 표시 -->
+    <TextView
+        android:id="@+id/creditText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/credit_text"
+        android:textColor="@color/wood_gold"
+        android:textSize="11sp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="6dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

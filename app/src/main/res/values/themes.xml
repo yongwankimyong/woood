@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WoodPrintCam" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/wood_medium</item>
+        <item name="colorPrimaryDark">@color/wood_dark</item>
+        <item name="colorAccent">@color/wood_gold</item>
+        <item name="android:windowBackground">@color/wood_cream</item>
+        <item name="android:statusBarColor">@color/wood_dark</item>
+    </style>
+
+    <style name="FrameChipButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_marginEnd">8dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/wood_cream</item>
+        <item name="strokeColor">@color/wood_gold</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+</resources>
