@@ -147,8 +147,64 @@
                 android:id="@+id/frameStarBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/bg_frame_chip"
                 android:text="별빛"
+                android:textColor="@color/wood_cream"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                android:paddingHorizontal="16dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
+
+            <Button
+                android:id="@+id/frameRainbowBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_frame_chip"
+                android:text="레인보우"
+                android:textColor="@color/wood_cream"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                android:paddingHorizontal="16dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
+
+            <Button
+                android:id="@+id/frameSnowBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_frame_chip"
+                android:text="스노우"
+                android:textColor="@color/wood_cream"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                android:paddingHorizontal="16dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
+
+            <Button
+                android:id="@+id/frameGoldBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_frame_chip"
+                android:text="골드"
+                android:textColor="@color/wood_cream"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                android:paddingHorizontal="16dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
+
+            <Button
+                android:id="@+id/frameBubbleBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_frame_chip"
+                android:text="버블"
                 android:textColor="@color/wood_cream"
                 android:textAllCaps="false"
                 android:textSize="13sp"
@@ -159,7 +215,6 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <!-- 카운트다운 숫자 표시 (3초 타이머용) -->
     <TextView
         android:id="@+id/countdownText"
         android:layout_width="wrap_content"
