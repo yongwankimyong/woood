@@ -505,63 +505,17 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
-    private val selphyPackageName = "jp.co.canon.ic.photolayout"
-
+    // 안드로이드 표준 인쇄 프레임워크로 전달.
+    // 캐논 셀피가 Wi-Fi/Mopria로 이미 연결되어 있으면 인쇄 다이얼로그의
+    // 프린터 목록에 자동으로 나타납니다.
     private fun printCapturedPhoto() {
         val bitmap = lastCapturedBitmap ?: return
-
-        try {
-            val cacheDir = java.io.File(cacheDir, "captured_images").apply { mkdirs() }
-            val imageFile = java.io.File(cacheDir, "photo_${System.currentTimeMillis()}.jpg")
-            java.io.FileOutputStream(imageFile).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
-            }
-
-            val photoUri = androidx.core.content.FileProvider.getUriForFile(
-                this,
-                "$packageName.fileprovider",
-                imageFile
-            )
-
-            val sendIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                type = "image/jpeg"
-                putExtra(android.content.Intent.EXTRA_STREAM, photoUri)
-                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                setPackage(selphyPackageName)
-            }
-
-            if (sendIntent.resolveActivity(packageManager) != null) {
-                startActivity(sendIntent)
-            } else {
-                showSelphyAppMissingDialog()
-            }
-        } catch (e: Exception) {
-            Toast.makeText(this, "인쇄 준비 중 오류: ${e.message}", Toast.LENGTH_LONG).show()
+        val printHelper = androidx.print.PrintHelper(this).apply {
+            scaleMode = androidx.print.PrintHelper.SCALE_MODE_FIT
+            colorMode = androidx.print.PrintHelper.COLOR_MODE_COLOR
+            orientation = androidx.print.PrintHelper.ORIENTATION_PORTRAIT
         }
-    }
-
-    private fun showSelphyAppMissingDialog() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("SELPHY Photo Layout 앱이 필요해요")
-            .setMessage("사진을 인쇄하려면 'SELPHY Photo Layout' 앱이 설치되어 있어야 해요. 지금 설치하러 갈까요?")
-            .setPositiveButton("설치하러 가기") { _, _ ->
-                val marketIntent = android.content.Intent(
-                    android.content.Intent.ACTION_VIEW,
-                    android.net.Uri.parse("market://details?id=$selphyPackageName")
-                )
-                try {
-                    startActivity(marketIntent)
-                } catch (e: Exception) {
-                    startActivity(
-                        android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://play.google.com/store/apps/details?id=$selphyPackageName")
-                        )
-                    )
-                }
-            }
-            .setNegativeButton("취소", null)
-            .show()
+        printHelper.printBitmap(getString(R.string.print_job_name), bitmap)
     }
 
     override fun onDestroy() {
