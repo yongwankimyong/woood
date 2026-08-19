@@ -27,7 +27,7 @@ import java.util.concurrent.Executors
 
 // 사용 가능한 프레임 종류
 enum class FrameType {
-    NONE, WOOD, POLAROID, HEART, FILMSTRIP, STARS
+    NONE, WOOD, POLAROID, HEART, FILMSTRIP, STARS, RAINBOW, SNOW, GOLD, BUBBLE
 }
 
 class MainActivity : AppCompatActivity() {
@@ -35,8 +35,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
-    private var lastCapturedBitmap: Bitmap? = null   // 프레임까지 적용된, 실제 인쇄될 이미지
-    private var originalBitmap: Bitmap? = null        // 프레임 적용 전 원본(필터만 적용된) 이미지
+    private var lastCapturedBitmap: Bitmap? = null
+    private var originalBitmap: Bitmap? = null
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     private var selectedFrame = FrameType.NONE
 
@@ -75,6 +75,10 @@ class MainActivity : AppCompatActivity() {
         binding.frameHeartBtn.setOnClickListener { selectFrame(FrameType.HEART) }
         binding.frameFilmBtn.setOnClickListener { selectFrame(FrameType.FILMSTRIP) }
         binding.frameStarBtn.setOnClickListener { selectFrame(FrameType.STARS) }
+        binding.frameRainbowBtn.setOnClickListener { selectFrame(FrameType.RAINBOW) }
+        binding.frameSnowBtn.setOnClickListener { selectFrame(FrameType.SNOW) }
+        binding.frameGoldBtn.setOnClickListener { selectFrame(FrameType.GOLD) }
+        binding.frameBubbleBtn.setOnClickListener { selectFrame(FrameType.BUBBLE) }
     }
 
     private fun hasCameraPermission(): Boolean =
@@ -118,7 +122,6 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    // 전면 <-> 후면 카메라 전환
     private fun switchCamera() {
         lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
             CameraSelector.LENS_FACING_FRONT
@@ -128,7 +131,6 @@ class MainActivity : AppCompatActivity() {
         startCamera()
     }
 
-    // 셔터 버튼을 누르면 화면에 3, 2, 1 숫자가 보이다가 자동으로 촬영됩니다.
     private val countdownHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
     private fun startCountdownAndCapture() {
@@ -206,9 +208,9 @@ class MainActivity : AppCompatActivity() {
         val canvas = Canvas(result)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        val brightness = 18f
-        val contrast = 1.08f
-        val saturation = 1.35f
+        val brightness = 30f
+        val contrast = 1.15f
+        val saturation = 1.6f
 
         val saturationMatrix = ColorMatrix().apply { setSaturation(saturation) }
         val brightnessContrastMatrix = ColorMatrix(
@@ -287,6 +289,10 @@ class MainActivity : AppCompatActivity() {
             )
             FrameType.FILMSTRIP -> drawFilmStripFrame(source)
             FrameType.POLAROID -> drawPolaroidFrame(source)
+            FrameType.RAINBOW -> drawRainbowFrame(source)
+            FrameType.SNOW -> drawSnowFrame(source)
+            FrameType.GOLD -> drawGoldFrame(source)
+            FrameType.BUBBLE -> drawBubbleFrame(source)
         }
     }
 
@@ -374,9 +380,131 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
-    // 캐논 SELPHY 프린터는 표준 인쇄가 아니라 "SELPHY Photo Layout" 전용 앱을 통해서만
-    // 인쇄되는 기종이 많습니다. 그래서 촬영한 사진을 그 앱으로 직접 전달(공유)해서
-    // 앱이 자동으로 열리며 사진이 이미 불러와진 상태로 시작되게 합니다.
+    private fun drawRainbowFrame(source: Bitmap): Bitmap {
+        val result = source.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(result)
+        val borderWidth = result.width * 0.045f
+
+        val rainbowColors = intArrayOf(
+            Color.parseColor("#FF5252"), Color.parseColor("#FFB300"),
+            Color.parseColor("#FFEE58"), Color.parseColor("#66BB6A"),
+            Color.parseColor("#42A5F5"), Color.parseColor("#7E57C2"),
+            Color.parseColor("#FF5252")
+        )
+        val shader = android.graphics.LinearGradient(
+            0f, 0f, result.width.toFloat(), result.height.toFloat(),
+            rainbowColors, null, android.graphics.Shader.TileMode.CLAMP
+        )
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = borderWidth
+            this.shader = shader
+        }
+        val inset = borderWidth / 2f
+        canvas.drawRect(inset, inset, result.width - inset, result.height - inset, borderPaint)
+        return result
+    }
+
+    private fun drawSnowFrame(source: Bitmap): Bitmap {
+        val result = source.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(result)
+        val borderWidth = result.width * 0.03f
+
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#E3F2FD")
+            style = Paint.Style.STROKE
+            strokeWidth = borderWidth
+        }
+        val inset = borderWidth / 2f
+        canvas.drawRect(inset, inset, result.width - inset, result.height - inset, borderPaint)
+
+        val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+        val random = java.util.Random(42)
+        repeat(40) {
+            val onTopBottom = random.nextBoolean()
+            val x: Float
+            val y: Float
+            if (onTopBottom) {
+                x = random.nextFloat() * result.width
+                y = if (random.nextBoolean()) borderWidth else result.height - borderWidth
+            } else {
+                x = if (random.nextBoolean()) borderWidth else result.width - borderWidth
+                y = random.nextFloat() * result.height
+            }
+            val radius = borderWidth * (0.08f + random.nextFloat() * 0.12f)
+            canvas.drawCircle(x, y, radius, dotPaint)
+        }
+        return result
+    }
+
+    private fun drawGoldFrame(source: Bitmap): Bitmap {
+        val result = source.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(result)
+        val gold = ContextCompat.getColor(this, R.color.wood_gold)
+
+        val outerWidth = result.width * 0.025f
+        val outerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = gold
+            style = Paint.Style.STROKE
+            strokeWidth = outerWidth
+        }
+        val outerInset = outerWidth / 2f
+        canvas.drawRect(outerInset, outerInset, result.width - outerInset, result.height - outerInset, outerPaint)
+
+        val innerWidth = result.width * 0.008f
+        val innerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = gold
+            style = Paint.Style.STROKE
+            strokeWidth = innerWidth
+        }
+        val innerInset = result.width * 0.045f
+        canvas.drawRect(
+            innerInset, innerInset,
+            result.width - innerInset, result.height - innerInset,
+            innerPaint
+        )
+        return result
+    }
+
+    private fun drawBubbleFrame(source: Bitmap): Bitmap {
+        val result = source.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(result)
+        val borderWidth = result.width * 0.02f
+
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = borderWidth
+        }
+        val inset = borderWidth / 2f
+        canvas.drawRect(inset, inset, result.width - inset, result.height - inset, borderPaint)
+
+        val pastelColors = intArrayOf(
+            Color.parseColor("#FFCDD2"), Color.parseColor("#C8E6C9"),
+            Color.parseColor("#BBDEFB"), Color.parseColor("#FFF9C4"),
+            Color.parseColor("#E1BEE7")
+        )
+        val random = java.util.Random(7)
+        repeat(18) {
+            val colorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = pastelColors[random.nextInt(pastelColors.size)]
+                alpha = 220
+            }
+            val edge = random.nextInt(4)
+            val x: Float
+            val y: Float
+            when (edge) {
+                0 -> { x = random.nextFloat() * result.width; y = borderWidth }
+                1 -> { x = random.nextFloat() * result.width; y = result.height - borderWidth }
+                2 -> { x = borderWidth; y = random.nextFloat() * result.height }
+                else -> { x = result.width - borderWidth; y = random.nextFloat() * result.height }
+            }
+            val radius = result.width * (0.012f + random.nextFloat() * 0.02f)
+            canvas.drawCircle(x, y, radius, colorPaint)
+        }
+        return result
+    }
+
     private val selphyPackageName = "jp.co.canon.ic.photolayout"
 
     private fun printCapturedPhoto() {
