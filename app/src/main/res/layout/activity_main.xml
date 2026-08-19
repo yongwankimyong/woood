@@ -159,6 +159,24 @@
         </LinearLayout>
     </HorizontalScrollView>
 
+    <!-- 카운트다운 숫자 표시 (3초 타이머용) -->
+    <TextView
+        android:id="@+id/countdownText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/wood_gold"
+        android:textSize="90sp"
+        android:textStyle="bold"
+        android:shadowColor="@color/wood_dark"
+        android:shadowRadius="12"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/previewView"
+        app:layout_constraintBottom_toBottomOf="@id/previewView"
+        app:layout_constraintStart_toStartOf="@id/previewView"
+        app:layout_constraintEnd_toEndOf="@id/previewView" />
+
     <TextView
         android:id="@+id/permissionText"
         android:layout_width="0dp"
@@ -214,7 +232,7 @@
                 android:layout_marginEnd="16dp"
                 android:background="@drawable/bg_outline_button"
                 android:text="@string/retake_btn"
-                android:textColor="@color/wood_cream"
+                android:textColor="@color/wood_white"
                 android:textAllCaps="false"
                 android:paddingHorizontal="24dp" />
 
@@ -224,7 +242,7 @@
                 android:layout_height="52dp"
                 android:background="@drawable/bg_gold_button"
                 android:text="@string/print_btn"
-                android:textColor="@color/wood_dark"
+                android:textColor="@color/wood_white"
                 android:textStyle="bold"
                 android:textAllCaps="false"
                 android:paddingHorizontal="24dp" />
