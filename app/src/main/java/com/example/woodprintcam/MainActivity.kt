@@ -1,10 +1,4 @@
-bash
-
-cat /home/claude/WoodPrintCam/app/src/main/java/com/example/woodprintcam/MainActivity.kt
-출력
-
 package com.example.woodprintcam
-
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
